@@ -1,73 +1,131 @@
-# Message Queues
+# Message Queue Service
 
-This project is an implementation of message queue with basic features.
+This project is an implementation of a message queue system with multiple backends and core queueing features. It is designed to simulate production-grade queue behavior for local development, testing, and learning purposes.
 
-## Background
+---
 
-Message queues are a ubiquitous mechanism for achieving horizontal scalability.
-However, many production message services (e.g., Amazon's SQS) do not come with
-an offline implementation suitable for local development and testing.  The purpose
-of this project is to resolve this deficiency by designing a simple
-message-queue API that supports three implementations:
+## Enhancements (Added by Shivam)
 
- - an in-memory queue, suitable for same-JVM producers and consumers. The in-memory queue is thread safe.
- - a file-based queue, suitable for same-host producers and consumers, but
-   potentially different JVMs. The file-based queue is thread safe and inter-process safe when run
-  in a *nix environment.
- - an adapter for a production queue service, such as SQS.
+- Implemented In-Memory Priority Queue  
+  - Supports priority-based message delivery  
+  - Maintains FIFO ordering within the same priority using timestamps  
 
-The intended usage is that application components be written to use queues via
-the common interface (QueueService), and injected with an instance suitable for the environment
-in which that component is running (development, testing, integration-testing,
-staging, production, etc).
+- Implemented Redis-based Queue using Upstash  
+  - Uses Upstash REST API (no Redis client required)  
+  - Demonstrates distributed queue capability  
 
-## Main Features of Message Queue
- - multiplicity
-   
-   A queue supports many producers and many consumers.
+- Added unit tests for both implementations  
+  - Covers ordering, FIFO behavior, and basic operations  
 
- - delivery
-   
-   A queue strives to deliver each message exactly once to exactly one consumer,
-   but guarantees at-least once delivery (it can re-deliver a message to a
-   consumer, or deliver a message to multiple consumers, in some cases).
+---
 
- - order
-   
-   A queue strives to deliver messages in FIFO order, but makes no guarantee
-   about delivery order.
+## Implementations
 
- - reliability
-   
-   When a consumer receives a message, it is not removed from the queue.
-   Instead, it is temporarily suppressed (becomes "invisible").  If the consumer
-   that received the message does not subsequently delete it within a
-   timeout period (the "visibility timeout"), the message automatically becomes
-   visible at the head of the queue again, ready to be delivered to another
-   consumer.
+The project supports the following queue types:
 
+1. In-Memory Queue  
+   - Thread-safe  
+   - Suitable for same-JVM producers and consumers  
+
+2. File-Based Queue  
+   - Thread-safe and inter-process safe  
+   - Uses file system for coordination across JVMs  
+
+3. SQS Queue  
+   - Adapter for AWS SQS  
+
+4. In-Memory Priority Queue (Added)  
+   - Priority-based delivery  
+   - FIFO maintained within same priority  
+   - Uses custom comparator over PriorityQueue  
+
+5. Redis Queue (Upstash)  
+   - Distributed queue using REST API  
+   - No infrastructure setup required  
+   - Demonstrates scalable queue design  
+
+---
+
+## Core Features
+
+Multiplicity  
+- Supports multiple producers and consumers  
+
+Delivery  
+- At-least-once delivery guarantee  
+- Messages may be re-delivered in failure scenarios  
+
+Order  
+- FIFO ordering (best-effort)  
+
+Reliability  
+- Visibility timeout mechanism  
+  - Messages are temporarily hidden after being pulled  
+  - If not deleted, they become visible again  
+
+---
 
 ## Code Structure
 
-The code under the com.example package.
-1. QueueService.java: the interface to cater for the essential queue actions:
-   - push     pushes a single message onto a specified queue
-   - pull     receives a single message from a specified queue
-   - delete   deletes a received message
+All code resides under:
 
-2. InMemoryQueueService.java: an in-memory version of QueueService. The in-memory queue is thread-safe.
+com.example
 
-3. FileQueueService.java: implement a file-based version of the interface,
-   which uses file system to co-ordinate between producers and consumers in
-   different JVMs (i.e. thread-safe in a single VM, but also inter-process safe
-   when used concurrently in multiple VMs).
+Key files:
 
-4. SqsQueueService.java: a SQS-based version of the interface.
+- QueueService.java – Core interface  
+- InMemoryQueueService.java – FIFO queue  
+- FileQueueService.java – File-based queue  
+- SqsQueueService.java – AWS SQS adapter  
+- InMemoryPriorityQueueService.java – Priority queue (added)  
+- RedisQueueService.java – Upstash Redis queue (added)  
+- Message.java – Message model  
 
-5. Config file: src/main/resources/config.properties.
+---
 
-6. Unit tests (including test the behavior of the visibility timeout).
+## Testing
 
-## Building and Running
-You can use Maven to run tests from the command-line with:
-  mvn package
+Unit tests are included for:
+
+- In-memory queue  
+- File queue  
+- Priority queue (ordering and FIFO)  
+- Redis queue (push and pull)  
+
+Run tests using:
+
+mvn test
+
+---
+
+## Building
+
+mvn clean install
+
+---
+
+## Design Decisions
+
+- Priority Queue implemented using PriorityQueue with:  
+  - Primary key: priority (descending)  
+  - Secondary key: timestamp (FIFO)  
+
+- Redis Queue implemented using Upstash HTTP API:  
+  - Simplifies integration  
+  - Avoids dependency on Redis client libraries  
+
+---
+
+## Future Improvements
+
+- Add priority support in Redis (using sorted sets)  
+- Implement visibility timeout in Redis queue  
+- Add dead-letter queue (DLQ)  
+- Support retry mechanisms  
+- Improve exactly-once delivery semantics  
+
+---
+
+## Author
+
+Shivam Sharma
