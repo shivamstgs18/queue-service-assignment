@@ -12,6 +12,11 @@ public class Message {
 
   private String msgBody;
 
+  // New fields for priority queue
+  private int priority;
+  private long createdAt;
+
+
   Message(String msgBody) {
     this.msgBody = msgBody;
   }
@@ -19,6 +24,13 @@ public class Message {
   Message(String msgBody, String receiptId) {
     this.msgBody = msgBody;
     this.receiptId = receiptId;
+  }
+
+  // New constructor for priority
+  Message(String msgBody, int priority) {
+    this.msgBody = msgBody;
+    this.priority = priority;
+    this.createdAt = System.nanoTime();
   }
 
   public String getReceiptId() {
@@ -52,5 +64,14 @@ public class Message {
 
   protected void incrementAttempts() {
     this.attempts++;
+  }
+
+  // Getters for priority logic
+  public int getPriority() {
+    return priority;
+  }
+
+  public long getCreatedAt() {
+    return createdAt;
   }
 }
